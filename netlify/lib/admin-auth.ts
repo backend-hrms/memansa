@@ -5,8 +5,9 @@ const COOKIE_NAME = "memansa_admin";
 export function validCredentials(username: string, password: string) {
   try {
     const [salt, expectedHex] = (process.env.ADMIN_PASSWORD_HASH || "").split(":");
-    if (!salt || !expectedHex || username !== process.env.ADMIN_USERNAME) return false;
-    const actual = scryptSync(password, salt, 32);
+    const expectedUsername = (process.env.ADMIN_USERNAME || "").trim().toLowerCase();
+    if (!salt || !expectedHex || username.trim().toLowerCase() !== expectedUsername) return false;
+    const actual = scryptSync(password.trim(), salt, 32);
     const expected = Buffer.from(expectedHex, "hex");
     return actual.length === expected.length && timingSafeEqual(actual, expected);
   } catch { return false; }
