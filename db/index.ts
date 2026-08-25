@@ -16,5 +16,5 @@ function renderClient() {
 export const renderPgClient = process.env.APP_RUNTIME === "render" ? renderClient() : null;
 
 export const db = renderPgClient
-  ? drizzlePostgres(renderPgClient, { schema })
+  ? drizzlePostgres({ client: renderPgClient, schema })
   : drizzleNetlify({ schema });
