@@ -4,9 +4,13 @@ import pg from "pg";
 import * as schema from "./schema.js";
 
 function renderPool() {
-  const connection = new URL(process.env.DATABASE_URL || "");
-  if (!connection.hostname.includes(".")) connection.hostname += ".singapore-postgres.render.com";
-  return new pg.Pool({ connectionString: connection.toString(), ssl: { rejectUnauthorized: false }, keepAlive: true });
+  const pool = new pg.Pool({
+    connectionString: process.env.DATABASE_URL,
+    keepAlive: true,
+    connectionTimeoutMillis: 15_000,
+  });
+  pool.on("error", (error) => console.error("PostgreSQL pool error", error));
+  return pool;
 }
 
 export const db = process.env.APP_RUNTIME === "render"

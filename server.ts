@@ -17,10 +17,9 @@ const types: Record<string, string> = {
 
 async function ensureDatabase() {
   if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required.");
-  const connection = new URL(process.env.DATABASE_URL);
-  if (!connection.hostname.includes(".")) connection.hostname += ".singapore-postgres.render.com";
-  const pool = new pg.Pool({ connectionString: connection.toString(), ssl: { rejectUnauthorized: false }, keepAlive: true });
-  await pool.query(`CREATE TABLE IF NOT EXISTS appointment_requests (
+  const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, keepAlive: true, connectionTimeoutMillis: 15_000 });
+  const setup = async () => {
+    await pool.query(`CREATE TABLE IF NOT EXISTS appointment_requests (
     id serial PRIMARY KEY, full_name text NOT NULL, mobile_number text NOT NULL,
     age integer NOT NULL, city text NOT NULL, health_concern text NOT NULL,
     preferred_date date NOT NULL, preferred_time text NOT NULL,
@@ -28,7 +27,16 @@ async function ensureDatabase() {
     admin_note text DEFAULT '' NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL
   )`);
-  await pool.query("ALTER TABLE appointment_requests ADD COLUMN IF NOT EXISTS admin_note text DEFAULT '' NOT NULL");
+    await pool.query("ALTER TABLE appointment_requests ADD COLUMN IF NOT EXISTS admin_note text DEFAULT '' NOT NULL");
+  };
+  for (let attempt = 1; ; attempt += 1) {
+    try { await setup(); break; }
+    catch (error) {
+      if (attempt === 6) throw error;
+      console.warn(`Database not ready (attempt ${attempt}/6); retrying...`);
+      await new Promise((resolve) => setTimeout(resolve, 5_000));
+    }
+  }
   await pool.end();
 }
 
