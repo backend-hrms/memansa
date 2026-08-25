@@ -1,0 +1,43 @@
+services:
+  - type: web
+    name: memansa-therapy-studio
+    runtime: node
+    plan: free
+    region: singapore
+    branch: main
+    autoDeployTrigger: commit
+    buildCommand: npm install --omit=dev
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: APP_RUNTIME
+        value: render
+      - key: NODE_VERSION
+        value: 20
+      - key: DATABASE_URL
+        fromDatabase:
+          name: memansa-postgres
+          property: connectionString
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD_HASH
+        sync: false
+      - key: ADMIN_SESSION_SECRET
+        generateValue: true
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_API_KEY_SID
+        sync: false
+      - key: TWILIO_API_KEY_SECRET
+        sync: false
+      - key: TWILIO_WHATSAPP_FROM
+        sync: false
+
+databases:
+  - name: memansa-postgres
+    databaseName: memansa
+    user: memansa
+    plan: free
+    region: singapore
+    postgresMajorVersion: "16"
+    ipAllowList: []
