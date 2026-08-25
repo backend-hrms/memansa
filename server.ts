@@ -2,7 +2,7 @@ import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { extname, resolve, sep } from "node:path";
-import pg from "pg";
+import { renderPgPool } from "./db/index.js";
 import admin from "./netlify/functions/admin.js";
 import adminStatus from "./netlify/functions/admin-status.js";
 import appointments from "./netlify/functions/appointments.js";
@@ -17,7 +17,8 @@ const types: Record<string, string> = {
 
 async function ensureDatabase() {
   if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required.");
-  const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, keepAlive: true, connectionTimeoutMillis: 15_000 });
+  if (!renderPgPool) throw new Error("Render PostgreSQL pool is unavailable.");
+  const pool = renderPgPool;
   const setup = async () => {
     await pool.query(`CREATE TABLE IF NOT EXISTS appointment_requests (
     id serial PRIMARY KEY, full_name text NOT NULL, mobile_number text NOT NULL,
@@ -37,7 +38,6 @@ async function ensureDatabase() {
       await new Promise((resolve) => setTimeout(resolve, 5_000));
     }
   }
-  await pool.end();
 }
 
 async function webRequest(request: IncomingMessage) {

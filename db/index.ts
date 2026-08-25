@@ -13,6 +13,8 @@ function renderPool() {
   return pool;
 }
 
-export const db = process.env.APP_RUNTIME === "render"
-  ? drizzlePostgres(renderPool(), { schema })
+export const renderPgPool = process.env.APP_RUNTIME === "render" ? renderPool() : null;
+
+export const db = renderPgPool
+  ? drizzlePostgres(renderPgPool, { schema })
   : drizzleNetlify({ schema });
