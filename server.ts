@@ -17,7 +17,9 @@ const types: Record<string, string> = {
 
 async function ensureDatabase() {
   if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required.");
-  const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+  const connection = new URL(process.env.DATABASE_URL);
+  if (!connection.hostname.includes(".")) connection.hostname += ".singapore-postgres.render.com";
+  const pool = new pg.Pool({ connectionString: connection.toString(), ssl: { rejectUnauthorized: false }, keepAlive: true });
   await pool.query(`CREATE TABLE IF NOT EXISTS appointment_requests (
     id serial PRIMARY KEY, full_name text NOT NULL, mobile_number text NOT NULL,
     age integer NOT NULL, city text NOT NULL, health_concern text NOT NULL,
