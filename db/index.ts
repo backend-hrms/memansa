@@ -3,20 +3,18 @@ import { drizzle as drizzlePostgres } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "./schema.js";
 
-function renderPool() {
-  const pool = new pg.Pool({
+function renderClient() {
+  const client = new pg.Client({
     connectionString: process.env.DATABASE_URL,
     keepAlive: true,
     connectionTimeoutMillis: 15_000,
-    min: 1,
-    idleTimeoutMillis: 0,
   });
-  pool.on("error", (error) => console.error("PostgreSQL pool error", error));
-  return pool;
+  client.on("error", (error) => console.error("PostgreSQL client error", error));
+  return client;
 }
 
-export const renderPgPool = process.env.APP_RUNTIME === "render" ? renderPool() : null;
+export const renderPgClient = process.env.APP_RUNTIME === "render" ? renderClient() : null;
 
-export const db = renderPgPool
-  ? drizzlePostgres(renderPgPool, { schema })
+export const db = renderPgClient
+  ? drizzlePostgres(renderPgClient, { schema })
   : drizzleNetlify({ schema });

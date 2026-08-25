@@ -2,7 +2,7 @@ import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { extname, resolve, sep } from "node:path";
-import { renderPgPool } from "./db/index.js";
+import { renderPgClient } from "./db/index.js";
 import admin from "./netlify/functions/admin.js";
 import adminStatus from "./netlify/functions/admin-status.js";
 import appointments from "./netlify/functions/appointments.js";
@@ -17,10 +17,11 @@ const types: Record<string, string> = {
 
 async function ensureDatabase() {
   if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required.");
-  if (!renderPgPool) throw new Error("Render PostgreSQL pool is unavailable.");
-  const pool = renderPgPool;
+  if (!renderPgClient) throw new Error("Render PostgreSQL client is unavailable.");
+  const client = renderPgClient;
+  await client.connect();
   const setup = async () => {
-    await pool.query(`CREATE TABLE IF NOT EXISTS appointment_requests (
+    await client.query(`CREATE TABLE IF NOT EXISTS appointment_requests (
     id serial PRIMARY KEY, full_name text NOT NULL, mobile_number text NOT NULL,
     age integer NOT NULL, city text NOT NULL, health_concern text NOT NULL,
     preferred_date date NOT NULL, preferred_time text NOT NULL,
@@ -28,7 +29,7 @@ async function ensureDatabase() {
     admin_note text DEFAULT '' NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL
   )`);
-    await pool.query("ALTER TABLE appointment_requests ADD COLUMN IF NOT EXISTS admin_note text DEFAULT '' NOT NULL");
+    await client.query("ALTER TABLE appointment_requests ADD COLUMN IF NOT EXISTS admin_note text DEFAULT '' NOT NULL");
   };
   for (let attempt = 1; ; attempt += 1) {
     try { await setup(); break; }
