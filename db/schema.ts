@@ -11,5 +11,6 @@ export const appointmentRequests = pgTable("appointment_requests", {
   preferredTime: text("preferred_time").notNull(),
   privacyConsent: boolean("privacy_consent").notNull(),
   status: text("status").notNull().default("pending"),
+  adminNote: text("admin_note").notNull().default(""),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

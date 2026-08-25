@@ -12,11 +12,13 @@ export default async (request: Request) => {
   const form = await request.formData();
   const id = Number(form.get("appointment-id"));
   const status = String(form.get("status") || "").toLowerCase();
+  const adminNote = String(form.get("admin-note") || "").trim();
   if (!Number.isInteger(id) || id < 1 || !allowedStatuses.has(status)) return new Response("Invalid status", { status: 400 });
+  if (adminNote.length > 4000) return new Response("Note is too long", { status: 400 });
   const [appointment] = await db.select().from(appointmentRequests)
     .where(eq(appointmentRequests.id, id)).limit(1);
   if (!appointment) return new Response("Appointment not found", { status: 404 });
-  await db.update(appointmentRequests).set({ status }).where(eq(appointmentRequests.id, id));
+  await db.update(appointmentRequests).set({ status, adminNote }).where(eq(appointmentRequests.id, id));
   let notice = "status-saved";
   if (status === "confirmed" && appointment.status !== "confirmed") {
     try {
@@ -27,7 +29,7 @@ export default async (request: Request) => {
       notice = "confirmation-failed";
     }
   }
-  return new Response(null, { status: 303, headers: { Location: `/admin?notice=${notice}` } });
+  return new Response(null, { status: 303, headers: { Location: `/admin?notice=${notice}#appointment-${id}` } });
 };
 
 export const config = { path: "/admin/status" };
