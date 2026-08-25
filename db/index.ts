@@ -8,6 +8,8 @@ function renderPool() {
     connectionString: process.env.DATABASE_URL,
     keepAlive: true,
     connectionTimeoutMillis: 15_000,
+    min: 1,
+    idleTimeoutMillis: 0,
   });
   pool.on("error", (error) => console.error("PostgreSQL pool error", error));
   return pool;
