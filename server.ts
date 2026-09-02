@@ -9,6 +9,7 @@ import patient from "./netlify/functions/patient.js";
 import patientMedicine from "./netlify/functions/patient-medicine.js";
 import patientMedicineRemove from "./netlify/functions/patient-medicine-remove.js";
 import patientFile from "./netlify/functions/patient-file.js";
+import patientReport from "./netlify/functions/patient-report.js";
 import appointments from "./netlify/functions/appointments.js";
 
 const root = resolve(".");
@@ -73,6 +74,17 @@ async function sendWebResponse(response: Response, outgoing: ServerResponse) {
   outgoing.end(Buffer.from(await response.arrayBuffer()));
 }
 
+async function patientPage(request: Request) {
+  const response = await patient(request);
+  if (response.status !== 200) return response;
+  const id = Number(new URL(request.url).searchParams.get("id"));
+  const html = (await response.text())
+    .replace("</style>", ".top-actions{display:flex;align-items:center;gap:9px}.download{display:inline-block;padding:11px 15px;border:1px solid #315f8f;border-radius:7px;background:#315f8f;color:#fff;text-decoration:none;font-weight:700}@media(max-width:520px){.top-actions{width:100%;flex-wrap:wrap}}</style>")
+    .replace('<a class="back"', `<div class="top-actions"><a class="download" href="/admin/patient/report?id=${id}">Download PDF report</a><a class="back"`)
+    .replace("← Back to dashboard</a></div>", "← Back to dashboard</a></div></div>");
+  return new Response(html, { status: response.status, headers: response.headers });
+}
+
 async function serveStatic(pathname: string, outgoing: ServerResponse) {
   const requested = pathname === "/" ? "/index.html" : pathname;
   const file = resolve(root, `.${decodeURIComponent(requested)}`);
@@ -93,10 +105,11 @@ createServer(async (request, response) => {
     if (pathname === "/health") return void sendWebResponse(Response.json({ ok: true }), response);
     if (pathname === "/admin") return void sendWebResponse(await admin(await webRequest(request)), response);
     if (pathname === "/admin/status") return void sendWebResponse(await adminStatus(await webRequest(request)), response);
-    if (pathname === "/admin/patient") return void sendWebResponse(await patient(await webRequest(request)), response);
+    if (pathname === "/admin/patient") return void sendWebResponse(await patientPage(await webRequest(request)), response);
     if (pathname === "/admin/patient/medicine") return void sendWebResponse(await patientMedicine(await webRequest(request)), response);
     if (pathname === "/admin/patient/medicine/remove") return void sendWebResponse(await patientMedicineRemove(await webRequest(request)), response);
     if (pathname === "/admin/patient/file") return void sendWebResponse(await patientFile(await webRequest(request)), response);
+    if (pathname === "/admin/patient/report") return void sendWebResponse(await patientReport(await webRequest(request)), response);
     if (pathname === "/api/appointments") return void sendWebResponse(await appointments(await webRequest(request)), response);
     if (await serveStatic(pathname, response)) return;
     response.statusCode = 404; response.end("Not found");
