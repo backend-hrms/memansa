@@ -7,6 +7,7 @@ import admin from "./netlify/functions/admin.js";
 import adminStatus from "./netlify/functions/admin-status.js";
 import patient from "./netlify/functions/patient.js";
 import patientMedicine from "./netlify/functions/patient-medicine.js";
+import patientMedicineRemove from "./netlify/functions/patient-medicine-remove.js";
 import patientFile from "./netlify/functions/patient-file.js";
 import appointments from "./netlify/functions/appointments.js";
 
@@ -94,6 +95,7 @@ createServer(async (request, response) => {
     if (pathname === "/admin/status") return void sendWebResponse(await adminStatus(await webRequest(request)), response);
     if (pathname === "/admin/patient") return void sendWebResponse(await patient(await webRequest(request)), response);
     if (pathname === "/admin/patient/medicine") return void sendWebResponse(await patientMedicine(await webRequest(request)), response);
+    if (pathname === "/admin/patient/medicine/remove") return void sendWebResponse(await patientMedicineRemove(await webRequest(request)), response);
     if (pathname === "/admin/patient/file") return void sendWebResponse(await patientFile(await webRequest(request)), response);
     if (pathname === "/api/appointments") return void sendWebResponse(await appointments(await webRequest(request)), response);
     if (await serveStatic(pathname, response)) return;
