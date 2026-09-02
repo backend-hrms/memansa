@@ -14,3 +14,17 @@ export const appointmentRequests = pgTable("appointment_requests", {
   adminNote: text("admin_note").notNull().default(""),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const medicineRecords = pgTable("medicine_records", {
+  id: serial("id").primaryKey(),
+  appointmentId: integer("appointment_id").notNull(),
+  medicineName: text("medicine_name").notNull(),
+  dosage: text("dosage").notNull().default(""),
+  frequency: text("frequency").notNull().default(""),
+  duration: text("duration").notNull().default(""),
+  instructions: text("instructions").notNull().default(""),
+  attachmentName: text("attachment_name").notNull().default(""),
+  attachmentMime: text("attachment_mime").notNull().default(""),
+  attachmentData: text("attachment_data").notNull().default(""),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});

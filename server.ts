@@ -5,6 +5,9 @@ import { extname, resolve, sep } from "node:path";
 import { renderPgClient } from "./db/index.js";
 import admin from "./netlify/functions/admin.js";
 import adminStatus from "./netlify/functions/admin-status.js";
+import patient from "./netlify/functions/patient.js";
+import patientMedicine from "./netlify/functions/patient-medicine.js";
+import patientFile from "./netlify/functions/patient-file.js";
 import appointments from "./netlify/functions/appointments.js";
 
 const root = resolve(".");
@@ -30,6 +33,14 @@ async function ensureDatabase() {
     created_at timestamp with time zone DEFAULT now() NOT NULL
   )`);
     await client.query("ALTER TABLE appointment_requests ADD COLUMN IF NOT EXISTS admin_note text DEFAULT '' NOT NULL");
+    await client.query(`CREATE TABLE IF NOT EXISTS medicine_records (
+      id serial PRIMARY KEY, appointment_id integer NOT NULL REFERENCES appointment_requests(id) ON DELETE CASCADE,
+      medicine_name text NOT NULL, dosage text DEFAULT '' NOT NULL, frequency text DEFAULT '' NOT NULL,
+      duration text DEFAULT '' NOT NULL, instructions text DEFAULT '' NOT NULL,
+      attachment_name text DEFAULT '' NOT NULL, attachment_mime text DEFAULT '' NOT NULL,
+      attachment_data text DEFAULT '' NOT NULL, created_at timestamp with time zone DEFAULT now() NOT NULL
+    )`);
+    await client.query("CREATE INDEX IF NOT EXISTS medicine_records_appointment_id_idx ON medicine_records (appointment_id)");
   };
   for (let attempt = 1; ; attempt += 1) {
     try { await setup(); break; }
@@ -81,6 +92,9 @@ createServer(async (request, response) => {
     if (pathname === "/health") return void sendWebResponse(Response.json({ ok: true }), response);
     if (pathname === "/admin") return void sendWebResponse(await admin(await webRequest(request)), response);
     if (pathname === "/admin/status") return void sendWebResponse(await adminStatus(await webRequest(request)), response);
+    if (pathname === "/admin/patient") return void sendWebResponse(await patient(await webRequest(request)), response);
+    if (pathname === "/admin/patient/medicine") return void sendWebResponse(await patientMedicine(await webRequest(request)), response);
+    if (pathname === "/admin/patient/file") return void sendWebResponse(await patientFile(await webRequest(request)), response);
     if (pathname === "/api/appointments") return void sendWebResponse(await appointments(await webRequest(request)), response);
     if (await serveStatic(pathname, response)) return;
     response.statusCode = 404; response.end("Not found");
